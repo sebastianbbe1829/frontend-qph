@@ -13,6 +13,7 @@ import { InputTextModule } from 'primeng/inputtext';
 import { TableModule } from 'primeng/table';
 import { ToastModule } from 'primeng/toast';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
+import { TooltipModule } from 'primeng/tooltip';
 import { ConfirmationService, MessageService } from 'primeng/api';
 
 @Component({
@@ -26,7 +27,8 @@ import { ConfirmationService, MessageService } from 'primeng/api';
     InputTextModule,
     TableModule,
     ToastModule,
-    ConfirmDialogModule
+    ConfirmDialogModule,
+    TooltipModule
   ],
   providers: [ConfirmationService, MessageService],
   templateUrl: './category-list.html',
