@@ -1,0 +1,112 @@
+<div class="categories-page">
+  <p-toast />
+  <p-confirmDialog />
+
+  <header class="page-header">
+    <div class="header-left">
+      <div class="header-icon"><i class="pi pi-tags"></i></div>
+      <div class="header-text">
+        <h1>Categorías</h1>
+        <p>{{ categories.length }} categoría{{ categories.length !== 1 ? 's' : '' }} registrada{{ categories.length !== 1 ? 's' : '' }}</p>
+      </div>
+    </div>
+    <div class="header-actions">
+      <p-button label="Productos" icon="pi pi-box" [outlined]="true" (onClick)="goToProducts()" />
+      <p-button label="Nueva categoría" icon="pi pi-plus" (onClick)="openCreateDialog()" />
+      <p-button icon="pi pi-sign-out" [text]="true" severity="secondary" pTooltip="Cerrar sesión" tooltipPosition="left" (onClick)="logout()" />
+    </div>
+  </header>
+
+  <section class="table-card">
+    <div class="table-toolbar">
+      <div class="search-box">
+        <i class="pi pi-search"></i>
+        <input
+          pInputText
+          type="text"
+          placeholder="Buscar categoría por nombre..."
+          aria-label="Buscar categorías por nombre"
+          (input)="dt.filterGlobal($any($event.target).value, 'contains')"
+        />
+      </div>
+      <span class="results-count">{{ categories.length }} registros</span>
+    </div>
+
+    <p-table
+      #dt
+      [value]="categories"
+      [loading]="loading"
+      [paginator]="true"
+      [rows]="10"
+      [rowsPerPageOptions]="[5, 10, 20]"
+      [globalFilterFields]="['nombre', 'descripcion']"
+      [rowHover]="true"
+      styleClass="p-datatable-sm"
+      [tableStyle]="{ 'min-width': '40rem' }"
+    >
+      <ng-template pTemplate="header">
+        <tr>
+          <th style="width: 90px">ID</th>
+          <th>Nombre</th>
+          <th>Descripción</th>
+          <th style="width: 130px; text-align: center">Acciones</th>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="body" let-category>
+        <tr>
+          <td><span class="id-badge">#{{ category.id }}</span></td>
+          <td><strong>{{ category.nombre }}</strong></td>
+          <td>{{ category.descripcion || '—' }}</td>
+          <td>
+            <div class="action-buttons">
+              <p-button icon="pi pi-pencil" [rounded]="true" [text]="true" severity="info" pTooltip="Editar" (onClick)="edit(category)" />
+              <p-button icon="pi pi-trash" [rounded]="true" [text]="true" severity="danger" pTooltip="Eliminar" (onClick)="confirmDelete(category)" />
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="emptymessage">
+        <tr><td colspan="4"><div class="empty-state"><i class="pi pi-inbox"></i><span>No hay categorías que coincidan con la búsqueda</span></div></td></tr>
+      </ng-template>
+    </p-table>
+  </section>
+
+  <p-dialog
+    [header]="editingId === null ? 'Nueva categoría' : 'Editar categoría'"
+    [(visible)]="dialogVisible"
+    [modal]="true"
+    [draggable]="false"
+    [resizable]="false"
+    [style]="{ width: 'min(560px, 94vw)' }"
+    [breakpoints]="{ '640px': '94vw' }"
+    (onHide)="resetForm()"
+    styleClass="category-dialog"
+  >
+    <form [formGroup]="form" (ngSubmit)="save()" class="category-form">
+      <p class="dialog-description">
+        {{ editingId === null ? 'Completa la información para registrar una categoría.' : 'Actualiza la información de la categoría seleccionada.' }}
+      </p>
+
+      <div class="field-group">
+        <label for="nombre">Nombre *</label>
+        <input pInputText id="nombre" formControlName="nombre" maxlength="100" placeholder="Ej. Tecnología" autofocus />
+        @if (form.controls.nombre.invalid && form.controls.nombre.touched) {
+          <small class="field-error">El nombre es obligatorio (máximo 100 caracteres).</small>
+        }
+      </div>
+
+      <div class="field-group">
+        <label for="descripcion">Descripción</label>
+        <input pInputText id="descripcion" formControlName="descripcion" maxlength="300" placeholder="Descripción opcional" />
+        @if (form.controls.descripcion.invalid && form.controls.descripcion.touched) {
+          <small class="field-error">Máximo 300 caracteres.</small>
+        }
+      </div>
+
+      <div class="form-actions">
+        <p-button label="Cancelar" icon="pi pi-times" severity="secondary" [outlined]="true" type="button" (onClick)="closeDialog()" />
+        <p-button [label]="editingId === null ? 'Crear categoría' : 'Guardar cambios'" [icon]="editingId === null ? 'pi pi-plus' : 'pi pi-check'" type="submit" [loading]="saving" [disabled]="form.invalid || saving" />
+      </div>
+    </form>
+  </p-dialog>
+</div>

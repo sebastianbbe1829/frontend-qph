@@ -114,7 +114,7 @@ $white:      #ffffff;
   }
 }
 
-// ─── Table card ───────────────────────────────────────────────────────────────
+// ─── Table card and search ────────────────────────────────────────────────────
 .table-card {
   background: $ink-soft;
   border: 1px solid $gold-dim;
@@ -131,6 +131,65 @@ $white:      #ffffff;
     z-index: 1;
   }
 }
+
+.table-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.1rem 1.25rem;
+  border-bottom: 1px solid $gold-dim;
+}
+
+.search-box {
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+  width: min(100%, 430px);
+  padding: .1rem .85rem;
+  border: 1px solid $gold-dim;
+  border-radius: 4px;
+  background: rgba(255,255,255,.025);
+  color: $gold;
+  transition: border-color .2s ease, background .2s ease;
+
+  &:focus-within {
+    border-color: $gold;
+    background: rgba(255,255,255,.025);
+  }
+
+  > i {
+    flex: 0 0 auto;
+    color: $gold;
+    font-size: .9rem;
+  }
+
+  input {
+    display: block;
+    flex: 1 1 auto;
+    width: 100%;
+    min-width: 0;
+    margin: 0;
+    padding: .7rem 0;
+    border: 0 !important;
+    border-radius: 0;
+    outline: 0;
+    box-shadow: none !important;
+    background: transparent !important;
+    color: $cream !important;
+    font-family: 'DM Sans', sans-serif;
+    font-size: .85rem;
+    appearance: none;
+    -webkit-appearance: none;
+  }
+
+  input::placeholder {
+    color: $muted !important;
+    opacity: 1;
+  }
+}
+
+.results-count { color: $muted-lite; font-size: 0.75rem; white-space: nowrap; }
 
 // ─── PrimeNG DataTable ────────────────────────────────────────────────────────
 ::ng-deep .p-datatable {
@@ -175,7 +234,6 @@ $white:      #ffffff;
     }
   }
 
-  // Paginador
   .p-paginator {
     background: $ink-mid !important;
     border-top: 1px solid $gold-dim !important;
@@ -456,4 +514,8 @@ $white:      #ffffff;
 @media (max-width: 768px) {
   .list-page { padding: 1.5rem 1rem; }
   .page-header { flex-direction: column; align-items: flex-start; gap: 1rem; }
+  .header-actions { flex-wrap: wrap; }
+  .table-toolbar { align-items: stretch; flex-direction: column; }
+  .search-box { width: 100%; box-sizing: border-box; }
+  .results-count { align-self: flex-end; }
 }

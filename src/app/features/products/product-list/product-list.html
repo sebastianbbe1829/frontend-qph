@@ -14,6 +14,12 @@
     </div>
     <div class="header-actions">
       <p-button
+        label="Categorías"
+        icon="pi pi-tags"
+        [outlined]="true"
+        (onClick)="goToCategories()"
+      />
+      <p-button
         label="Nuevo Producto"
         icon="pi pi-plus"
         styleClass="new-btn"
@@ -31,7 +37,21 @@
   </div>
 
   <div class="table-card">
+    <div class="table-toolbar">
+      <div class="search-box">
+        <i class="pi pi-search"></i>
+        <input
+          type="text"
+          placeholder="Buscar producto por nombre..."
+          aria-label="Buscar productos por nombre"
+          (input)="dt.filterGlobal($any($event.target).value, 'contains')"
+        />
+      </div>
+      <span class="results-count">{{ products.length }} registros</span>
+    </div>
+
     <p-table
+      #dt
       [value]="products"
       [loading]="loading"
       [paginator]="true"
@@ -40,6 +60,7 @@
       styleClass="p-datatable-sm"
       [tableStyle]="{ 'min-width': '48rem' }"
       [rowHover]="true"
+      [globalFilterFields]="['nombre']"
     >
       <ng-template pTemplate="header">
         <tr>
@@ -107,7 +128,7 @@
           <td colspan="5">
             <div class="empty-state">
               <i class="pi pi-inbox"></i>
-              <span>No hay productos registrados</span>
+              <span>No hay productos que coincidan con la búsqueda</span>
               <p-button
                 label="Crear primer producto"
                 icon="pi pi-plus"

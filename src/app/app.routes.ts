@@ -9,6 +9,12 @@ export const routes: Routes = [
       import('./features/auth/login/login').then(m => m.LoginComponent)
   },
   {
+    path: 'categories',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./features/categories/category-list/category-list').then(m => m.CategoryListComponent)
+  },
+  {
     path: 'products',
     canActivate: [authGuard],
     loadChildren: () =>
