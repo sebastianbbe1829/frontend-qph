@@ -8,11 +8,11 @@ import { AuthService } from '../../../core/services/auth';
 import { Category } from '../../../shared/models/category.model';
 
 import { ButtonModule } from 'primeng/button';
-import { CardModule } from 'primeng/card';
 import { InputTextModule } from 'primeng/inputtext';
 import { TableModule } from 'primeng/table';
 import { ToastModule } from 'primeng/toast';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
+import { DialogModule } from 'primeng/dialog';
 import { TooltipModule } from 'primeng/tooltip';
 import { ConfirmationService, MessageService } from 'primeng/api';
 
@@ -23,11 +23,11 @@ import { ConfirmationService, MessageService } from 'primeng/api';
     CommonModule,
     ReactiveFormsModule,
     ButtonModule,
-    CardModule,
     InputTextModule,
     TableModule,
     ToastModule,
     ConfirmDialogModule,
+    DialogModule,
     TooltipModule
   ],
   providers: [ConfirmationService, MessageService],
@@ -45,6 +45,7 @@ export class CategoryListComponent implements OnInit {
   categories: Category[] = [];
   loading = false;
   saving = false;
+  dialogVisible = false;
   editingId: number | null = null;
 
   form = this.fb.nonNullable.group({
@@ -74,6 +75,11 @@ export class CategoryListComponent implements OnInit {
     });
   }
 
+  openCreateDialog(): void {
+    this.resetForm();
+    this.dialogVisible = true;
+  }
+
   save(): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
@@ -81,18 +87,23 @@ export class CategoryListComponent implements OnInit {
     }
 
     this.saving = true;
-    const payload: Category = this.form.getRawValue();
-    const request = this.editingId === null
+    const payload: Category = {
+      nombre: this.form.controls.nombre.value.trim(),
+      descripcion: this.form.controls.descripcion.value.trim()
+    };
+    const editingId = this.editingId;
+    const request = editingId === null
       ? this.categoryService.create(payload)
-      : this.categoryService.update(this.editingId, payload);
+      : this.categoryService.update(editingId, payload);
 
     request.subscribe({
       next: () => {
         this.messageService.add({
           severity: 'success',
           summary: 'Éxito',
-          detail: this.editingId === null ? 'Categoría creada' : 'Categoría actualizada'
+          detail: editingId === null ? 'Categoría creada' : 'Categoría actualizada'
         });
+        this.dialogVisible = false;
         this.resetForm();
         this.loadCategories();
       },
@@ -113,6 +124,7 @@ export class CategoryListComponent implements OnInit {
       nombre: category.nombre,
       descripcion: category.descripcion ?? ''
     });
+    this.dialogVisible = true;
   }
 
   confirmDelete(category: Category): void {
@@ -136,7 +148,7 @@ export class CategoryListComponent implements OnInit {
           summary: 'Éxito',
           detail: 'Categoría eliminada'
         });
-        if (this.editingId === category.id) this.resetForm();
+        if (this.editingId === category.id) this.closeDialog();
         this.loadCategories();
       },
       error: (error: HttpErrorResponse) => {
@@ -147,6 +159,11 @@ export class CategoryListComponent implements OnInit {
         });
       }
     });
+  }
+
+  closeDialog(): void {
+    this.dialogVisible = false;
+    this.resetForm();
   }
 
   resetForm(): void {
