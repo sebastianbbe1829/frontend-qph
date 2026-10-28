@@ -13,6 +13,7 @@ import { TagModule } from 'primeng/tag';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { ToastModule } from 'primeng/toast';
 import { ToolbarModule } from 'primeng/toolbar';
+import { TooltipModule } from 'primeng/tooltip';
 import { ConfirmationService, MessageService } from 'primeng/api';
 
 @Component({
@@ -26,7 +27,8 @@ import { ConfirmationService, MessageService } from 'primeng/api';
     TagModule,
     ConfirmDialogModule,
     ToastModule,
-    ToolbarModule
+    ToolbarModule,
+    TooltipModule
   ],
   providers: [ConfirmationService, MessageService],
   templateUrl: './product-list.html',
