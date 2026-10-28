@@ -164,9 +164,8 @@ $white:      #ffffff;
     font-size: .9rem;
   }
 
-  input.p-inputtext,
-  input.p-inputtext:enabled,
-  input.p-inputtext:enabled:focus {
+  input {
+    display: block;
     flex: 1 1 auto;
     width: 100%;
     min-width: 0;
@@ -180,9 +179,11 @@ $white:      #ffffff;
     color: $cream !important;
     font-family: 'DM Sans', sans-serif;
     font-size: .85rem;
+    appearance: none;
+    -webkit-appearance: none;
   }
 
-  input.p-inputtext::placeholder {
+  input::placeholder {
     color: $muted !important;
     opacity: 1;
   }
