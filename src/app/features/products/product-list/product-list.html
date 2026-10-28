@@ -14,6 +14,12 @@
     </div>
     <div class="header-actions">
       <p-button
+        label="Categorías"
+        icon="pi pi-tags"
+        [outlined]="true"
+        (onClick)="goToCategories()"
+      />
+      <p-button
         label="Nuevo Producto"
         icon="pi pi-plus"
         styleClass="new-btn"
