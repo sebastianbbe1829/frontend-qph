@@ -1,0 +1,79 @@
+<div class="categories-page">
+  <p-toast />
+  <p-confirmDialog />
+
+  <header class="page-header">
+    <div class="header-left">
+      <div class="header-icon"><i class="pi pi-tags"></i></div>
+      <div class="header-text">
+        <h1>Categorías</h1>
+        <p>{{ categories.length }} categoría{{ categories.length !== 1 ? 's' : '' }} registrada{{ categories.length !== 1 ? 's' : '' }}</p>
+      </div>
+    </div>
+    <div class="header-actions">
+      <p-button label="Productos" icon="pi pi-box" [outlined]="true" (onClick)="goToProducts()" />
+      <p-button icon="pi pi-sign-out" [text]="true" severity="secondary" pTooltip="Cerrar sesión" (onClick)="logout()" />
+    </div>
+  </header>
+
+  <section class="category-form">
+    <div class="section-heading">
+      <i class="pi" [ngClass]="editingId === null ? 'pi-plus-circle' : 'pi-pencil'"></i>
+      <h2>{{ editingId === null ? 'Nueva categoría' : 'Editar categoría' }}</h2>
+    </div>
+
+    <form [formGroup]="form" (ngSubmit)="save()">
+      <div class="form-grid">
+        <div class="field-group">
+          <label for="nombre">Nombre *</label>
+          <input pInputText id="nombre" formControlName="nombre" maxlength="100" placeholder="Ej. Tecnología" />
+          @if (form.controls.nombre.invalid && form.controls.nombre.touched) {
+            <small class="field-error">El nombre es obligatorio (máximo 100 caracteres).</small>
+          }
+        </div>
+        <div class="field-group">
+          <label for="descripcion">Descripción</label>
+          <input pInputText id="descripcion" formControlName="descripcion" maxlength="300" placeholder="Descripción opcional" />
+          @if (form.controls.descripcion.invalid && form.controls.descripcion.touched) {
+            <small class="field-error">Máximo 300 caracteres.</small>
+          }
+        </div>
+      </div>
+      <div class="form-actions">
+        @if (editingId !== null) {
+          <p-button label="Cancelar edición" severity="secondary" [outlined]="true" type="button" (onClick)="resetForm()" />
+        }
+        <p-button [label]="editingId === null ? 'Crear categoría' : 'Guardar cambios'" [icon]="editingId === null ? 'pi pi-plus' : 'pi pi-check'" type="submit" [loading]="saving" [disabled]="form.invalid || saving" />
+      </div>
+    </form>
+  </section>
+
+  <section class="table-card">
+    <p-table [value]="categories" [loading]="loading" [paginator]="true" [rows]="10" [rowsPerPageOptions]="[5, 10, 20]" [rowHover]="true">
+      <ng-template pTemplate="header">
+        <tr>
+          <th style="width: 90px">ID</th>
+          <th>Nombre</th>
+          <th>Descripción</th>
+          <th style="width: 130px; text-align: center">Acciones</th>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="body" let-category>
+        <tr>
+          <td><span class="id-badge">#{{ category.id }}</span></td>
+          <td><strong>{{ category.nombre }}</strong></td>
+          <td>{{ category.descripcion || '—' }}</td>
+          <td>
+            <div class="action-buttons">
+              <p-button icon="pi pi-pencil" [rounded]="true" [text]="true" severity="info" pTooltip="Editar" (onClick)="edit(category)" />
+              <p-button icon="pi pi-trash" [rounded]="true" [text]="true" severity="danger" pTooltip="Eliminar" (onClick)="confirmDelete(category)" />
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="emptymessage">
+        <tr><td colspan="4"><div class="empty-state"><i class="pi pi-inbox"></i><span>No hay categorías registradas</span></div></td></tr>
+      </ng-template>
+    </p-table>
+  </section>
+</div>
