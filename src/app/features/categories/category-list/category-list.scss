@@ -29,23 +29,48 @@ $error: #e05252;
   border-bottom: 1px solid $gold-dim;
 }
 .header-left, .header-actions { display: flex; align-items: center; gap: 1rem; }
+.header-actions { flex-wrap: wrap; justify-content: flex-end; }
 .header-icon { width: 48px; height: 48px; border: 1px solid $gold; display: grid; place-items: center; color: $gold; }
 .header-icon i { font-size: 1.2rem; }
 .header-text h1 { margin: 0 0 .25rem; color: $cream; font-family: 'Playfair Display', serif; font-size: 1.8rem; }
 .header-text p { margin: 0; color: $muted-lite; font-size: .75rem; }
-.category-form, .table-card { background: $ink-soft; border: 1px solid $gold-dim; border-radius: 6px; margin-bottom: 1.5rem; overflow: hidden; }
-.category-form { padding: 1.5rem; }
-.section-heading { display: flex; align-items: center; gap: .65rem; color: $gold; margin-bottom: 1.25rem; }
-.section-heading h2 { margin: 0; color: $cream; font-size: 1rem; font-weight: 500; }
-.form-grid { display: grid; grid-template-columns: 1fr 2fr; gap: 1rem; }
-.field-group { display: flex; flex-direction: column; gap: .5rem; }
-.field-group label { color: $muted-lite; text-transform: uppercase; letter-spacing: .12em; font-size: .68rem; }
-.field-group input { width: 100%; box-sizing: border-box; background: rgba(255,255,255,.04); border: 1px solid $gold-dim; color: $cream; padding: .8rem .9rem; }
-.field-group input:focus { border-color: $gold; box-shadow: none; }
-.field-error { color: $error; font-size: .75rem; }
-.form-actions { display: flex; justify-content: flex-end; gap: .75rem; margin-top: 1.25rem; }
-.table-card { position: relative; }
+.table-card { background: $ink-soft; border: 1px solid $gold-dim; border-radius: 6px; overflow: hidden; position: relative; }
 .table-card::before { content: ''; display: block; height: 2px; background: linear-gradient(90deg, transparent, $gold, transparent); }
+
+.table-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.1rem 1.25rem;
+  border-bottom: 1px solid $gold-dim;
+}
+.search-box {
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+  width: min(100%, 430px);
+  padding: .1rem .85rem;
+  border: 1px solid $gold-dim;
+  border-radius: 4px;
+  background: rgba(255,255,255,.025);
+  color: $gold;
+}
+.search-box:focus-within { border-color: $gold; }
+.search-box i { font-size: .9rem; }
+.search-box input {
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  box-shadow: none;
+  background: transparent;
+  color: $cream;
+  padding: .7rem 0;
+}
+.search-box input::placeholder { color: $muted; }
+.results-count { color: $muted-lite; font-size: .75rem; white-space: nowrap; }
+
 .id-badge { color: $muted; font-size: .75rem; }
 .action-buttons { display: flex; justify-content: center; gap: .25rem; }
 .empty-state { display: flex; flex-direction: column; align-items: center; gap: .75rem; padding: 3rem 1rem; color: $muted; }
@@ -62,10 +87,32 @@ $error: #e05252;
 :host ::ng-deep .p-button.p-button-text { background: transparent; color: $muted-lite; border: 0; }
 :host ::ng-deep .p-button.p-button-text:hover { color: $gold; }
 
+.field-group { display: flex; flex-direction: column; gap: .5rem; margin-bottom: 1.1rem; }
+.field-group label { color: $muted-lite; text-transform: uppercase; letter-spacing: .12em; font-size: .68rem; }
+.field-group input { width: 100%; box-sizing: border-box; background: rgba(255,255,255,.04); border: 1px solid $gold-dim; color: $cream; padding: .8rem .9rem; }
+.field-group input:focus { border-color: $gold; box-shadow: none; }
+.field-error { color: $error; font-size: .75rem; }
+.dialog-description { margin: 0 0 1.4rem; color: $muted-lite; font-size: .85rem; line-height: 1.5; }
+.form-actions { display: flex; justify-content: flex-end; gap: .75rem; margin-top: 1.5rem; }
+
+:host ::ng-deep .category-dialog .p-dialog-header,
+:host ::ng-deep .category-dialog .p-dialog-content,
+:host ::ng-deep .category-dialog .p-dialog-footer { background: $ink-soft; color: $cream; }
+:host ::ng-deep .category-dialog .p-dialog-header { border-bottom: 1px solid $gold-dim; }
+:host ::ng-deep .category-dialog .p-dialog-title { color: $cream; font-family: 'Playfair Display', serif; font-size: 1.2rem; }
+:host ::ng-deep .category-dialog .p-dialog-header-close { color: $muted-lite; }
+:host ::ng-deep .category-dialog .p-dialog-content { padding: 1.5rem; }
+:host ::ng-deep .category-dialog .p-dialog-header-close:hover { color: $gold; background: transparent; }
+:host ::ng-deep .category-dialog .p-inputtext { width: 100%; background: rgba(255,255,255,.04); border: 1px solid $gold-dim; color: $cream; }
+:host ::ng-deep .category-dialog .p-inputtext:focus { border-color: $gold; box-shadow: 0 0 0 1px rgba(201,169,110,.15); }
+
 @media (max-width: 760px) {
   .categories-page { padding: 1.25rem 1rem; }
   .page-header { align-items: flex-start; flex-direction: column; }
-  .header-actions { width: 100%; justify-content: flex-end; flex-wrap: wrap; }
-  .form-grid { grid-template-columns: 1fr; }
-  .category-form { padding: 1rem; }
+  .header-actions { width: 100%; justify-content: flex-start; }
+  .table-toolbar { align-items: stretch; flex-direction: column; }
+  .search-box { width: 100%; box-sizing: border-box; }
+  .results-count { align-self: flex-end; }
+  .form-actions { flex-direction: column-reverse; }
+  .form-actions p-button { width: 100%; }
 }
