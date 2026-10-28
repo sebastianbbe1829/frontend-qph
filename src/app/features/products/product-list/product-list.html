@@ -1,0 +1,123 @@
+<div class="list-page">
+  <p-toast />
+  <p-confirmDialog />
+
+  <div class="page-header">
+    <div class="header-left">
+      <div class="header-icon">
+        <i class="pi pi-box"></i>
+      </div>
+      <div class="header-text">
+        <h1>Productos</h1>
+        <p>{{ products.length }} producto{{ products.length !== 1 ? 's' : '' }} registrado{{ products.length !== 1 ? 's' : '' }}</p>
+      </div>
+    </div>
+    <div class="header-actions">
+      <p-button
+        label="Nuevo Producto"
+        icon="pi pi-plus"
+        styleClass="new-btn"
+        (onClick)="goToCreate()"
+      />
+      <p-button
+        icon="pi pi-sign-out"
+        [text]="true"
+        severity="secondary"
+        pTooltip="Cerrar sesión"
+        tooltipPosition="left"
+        (onClick)="logout()"
+      />
+    </div>
+  </div>
+
+  <div class="table-card">
+    <p-table
+      [value]="products"
+      [loading]="loading"
+      [paginator]="true"
+      [rows]="10"
+      [rowsPerPageOptions]="[5, 10, 20]"
+      styleClass="p-datatable-sm"
+      [tableStyle]="{ 'min-width': '48rem' }"
+      [rowHover]="true"
+    >
+      <ng-template pTemplate="header">
+        <tr>
+          <th pSortableColumn="id" style="width: 80px">
+            ID <p-sortIcon field="id" />
+          </th>
+          <th pSortableColumn="nombre">
+            Nombre <p-sortIcon field="nombre" />
+          </th>
+          <th pSortableColumn="precio" style="width: 160px">
+            Precio <p-sortIcon field="precio" />
+          </th>
+          <th pSortableColumn="stock" style="width: 120px">
+            Stock <p-sortIcon field="stock" />
+          </th>
+          <th style="width: 120px; text-align: center">Acciones</th>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="body" let-product>
+        <tr>
+          <td>
+            <span class="id-badge">#{{ product.id }}</span>
+          </td>
+          <td>
+            <div class="product-name">
+              <i class="pi pi-tag"></i>
+              {{ product.nombre }}
+            </div>
+          </td>
+          <td>
+            <span class="price-value">{{ product.precio | currency:'USD' }}</span>
+          </td>
+          <td>
+            <p-tag
+              [value]="product.stock + ' uds'"
+              [severity]="getStockSeverity(product.stock)"
+            />
+          </td>
+          <td>
+            <div class="action-buttons">
+              <p-button
+                icon="pi pi-pencil"
+                [rounded]="true"
+                [text]="true"
+                severity="info"
+                pTooltip="Editar"
+                (onClick)="goToEdit(product.id)"
+              />
+              <p-button
+                icon="pi pi-trash"
+                [rounded]="true"
+                [text]="true"
+                severity="danger"
+                pTooltip="Eliminar"
+                (onClick)="confirmDelete(product)"
+              />
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="5">
+            <div class="empty-state">
+              <i class="pi pi-inbox"></i>
+              <span>No hay productos registrados</span>
+              <p-button
+                label="Crear primer producto"
+                icon="pi pi-plus"
+                [text]="true"
+                (onClick)="goToCreate()"
+              />
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </div>
+</div>
