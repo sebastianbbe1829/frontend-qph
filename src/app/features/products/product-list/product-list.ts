@@ -69,6 +69,10 @@ export class ProductListComponent implements OnInit {
     this.router.navigate(['/products/new']);
   }
 
+  goToCategories(): void {
+    this.router.navigate(['/categories']);
+  }
+
   goToEdit(id: number): void {
     this.router.navigate(['/products/edit', id]);
   }
