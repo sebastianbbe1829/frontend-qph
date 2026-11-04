@@ -29,13 +29,27 @@ export class AuthService {
   }
 
   isAuthenticated(): boolean {
+    return this.getTokenPayload() !== null;
+  }
+
+  hasRole(role: string): boolean {
+    const roles: unknown = this.getTokenPayload()?.['roles'];
+    return Array.isArray(roles) && roles.includes(role);
+  }
+
+  private getTokenPayload(): Record<string, unknown> | null {
     const token = this.getToken();
-    if (!token) return false;
+    if (!token) return null;
     try {
-      const payload = JSON.parse(atob(token.split('.')[1]));
-      return payload.exp * 1000 > Date.now();
+      const payloadPart = token.split('.')[1];
+      if (!payloadPart) return null;
+      const normalized = payloadPart.replace(/-/g, '+').replace(/_/g, '/');
+      const payload = JSON.parse(atob(normalized)) as Record<string, unknown>;
+      return typeof payload['exp'] === 'number' && payload['exp'] * 1000 > Date.now()
+        ? payload
+        : null;
     } catch {
-      return false;
+      return null;
     }
   }
 }

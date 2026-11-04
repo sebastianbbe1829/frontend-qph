@@ -1,0 +1,54 @@
+<div class="user-page">
+  <p-toast />
+  <header class="user-header">
+    <div>
+      <span class="eyebrow">Administración</span>
+      <h1>Crear usuario</h1>
+      <p>Registra una cuenta y asigna su nivel de acceso.</p>
+    </div>
+    <p-button label="Volver a productos" icon="pi pi-arrow-left" [outlined]="true" (onClick)="goBack()" />
+  </header>
+
+  <form [formGroup]="form" (ngSubmit)="save()" class="user-form">
+    <div class="field-group">
+      <label for="username">Nombre de usuario</label>
+      <input pInputText id="username" formControlName="username" autocomplete="off" />
+      @if (form.controls.username.touched && form.controls.username.invalid) {
+        <small>Usa entre 3 y 50 letras, números, puntos, guiones o guiones bajos.</small>
+      }
+    </div>
+
+    <div class="field-group">
+      <label for="password">Contraseña</label>
+      <p-password
+        inputId="password"
+        formControlName="password"
+        [feedback]="true"
+        [toggleMask]="true"
+        [fluid]="true"
+        autocomplete="new-password"
+      />
+      @if (form.controls.password.touched && form.controls.password.invalid) {
+        <small>La contraseña debe tener entre 8 y 72 caracteres.</small>
+      }
+    </div>
+
+    <div class="field-group">
+      <label for="role">Rol</label>
+      <p-select
+        inputId="role"
+        formControlName="role"
+        [options]="roles"
+        optionLabel="label"
+        optionValue="value"
+        [fluid]="true"
+      />
+    </div>
+
+    <p class="password-note"><i class="pi pi-lock"></i> La contraseña se almacenará cifrada con BCrypt.</p>
+    <div class="form-actions">
+      <p-button label="Cancelar" severity="secondary" [outlined]="true" type="button" (onClick)="goBack()" />
+      <p-button label="Crear usuario" icon="pi pi-user-plus" type="submit" [loading]="saving" [disabled]="form.invalid || saving" />
+    </div>
+  </form>
+</div>

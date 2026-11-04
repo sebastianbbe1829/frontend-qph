@@ -541,6 +541,33 @@ $white:      #ffffff;
   font-family: 'DM Sans', sans-serif;
 }
 
+.sale-cart-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto auto;
+  align-items: center;
+  gap: .75rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid $gold-dim;
+
+  .sale-product-summary { min-width: 0; }
+  .sale-product-summary > div:last-child { min-width: 0; }
+  .sale-product-summary strong,
+  .sale-product-summary span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  ::ng-deep .sale-cart-quantity { width: 4rem; text-align: center; }
+  .sale-line-total { min-width: 5rem; color: $gold; text-align: right; }
+}
+
+.empty-cart {
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+  padding: 1.5rem 0;
+  color: $muted-lite;
+
+  i { color: $gold; }
+}
+
 .sale-product-summary {
   display: flex;
   align-items: center;
@@ -595,6 +622,15 @@ $white:      #ffffff;
   display: flex;
   justify-content: flex-end;
   gap: 0.6rem;
+}
+
+@media (max-width: 520px) {
+  .sale-cart-item {
+    grid-template-columns: minmax(0, 1fr) auto;
+
+    .sale-product-summary { grid-column: 1 / -1; }
+    .sale-line-total { text-align: left; }
+  }
 }
 
 // ─── Responsive ───────────────────────────────────────────────────────────────

@@ -1,13 +1,13 @@
 import { Component, DestroyRef, inject, OnInit } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { ProductService } from '../../../core/services/product';
 import { SaleService } from '../../../core/services/sale';
 import { AuthService } from '../../../core/services/auth';
 import { Product } from '../../../shared/models/product.model';
-import { SaleResponse } from '../../../shared/models/sale.model';
 import { HttpErrorResponse } from '@angular/common/http';
 import { catchError, finalize, of, switchMap, timer } from 'rxjs';
 
@@ -25,11 +25,17 @@ import { InputTextModule } from 'primeng/inputtext';
 import { InputNumberModule } from 'primeng/inputnumber';
 import { ConfirmationService, MessageService } from 'primeng/api';
 
+interface SaleCartItem {
+  product: Product;
+  quantity: number;
+}
+
 @Component({
   selector: 'app-product-list',
   standalone: true,
   imports: [
     CommonModule,
+    FormsModule,
     ReactiveFormsModule,
     TableModule,
     ButtonModule,
@@ -60,6 +66,7 @@ export class ProductListComponent implements OnInit {
 
   products: Product[] = [];
   loading = false;
+  isAdmin = this.authService.hasRole('ROLE_ADMIN');
   individualLookupMode = false;
   lookupLoading = false;
   lookupMessage = 'Ingresa el ID del producto para consultar sus datos';
@@ -68,10 +75,7 @@ export class ProductListComponent implements OnInit {
   });
   sellingProductIds = new Set<number>();
   saleDialogVisible = false;
-  selectedProduct: Product | null = null;
-  saleForm = this.fb.group({
-    quantity: [1 as number | null, [Validators.required, Validators.min(1)]]
-  });
+  saleCart: SaleCartItem[] = [];
 
   ngOnInit(): void {
     this.lookupForm.controls.id.valueChanges.pipe(
@@ -156,6 +160,10 @@ export class ProductListComponent implements OnInit {
     this.router.navigate(['/categories']);
   }
 
+  goToCreateUser(): void {
+    this.router.navigate(['/users/new']);
+  }
+
   goToEdit(id: number): void {
     this.router.navigate(['/products/edit', id]);
   }
@@ -172,19 +180,64 @@ export class ProductListComponent implements OnInit {
     });
   }
 
-  openSaleDialog(product: Product): void {
+  addProductToSale(product: Product): void {
     if (product.id === undefined || product.stock <= 0) {
       return;
     }
 
-    this.selectedProduct = product;
-    this.saleForm.controls.quantity.setValidators([
-      Validators.required,
-      Validators.min(1),
-      Validators.max(product.stock)
-    ]);
-    this.saleForm.controls.quantity.setValue(1);
-    this.saleForm.controls.quantity.updateValueAndValidity();
+    const existing = this.saleCart.find((item) => item.product.id === product.id);
+    if (existing) {
+      if (existing.quantity >= product.stock) {
+        this.messageService.add({
+          severity: 'warn',
+          summary: 'Stock máximo',
+          detail: `Ya agregaste todas las unidades disponibles de "${product.nombre}".`
+        });
+        return;
+      }
+      existing.quantity += 1;
+    } else {
+      this.saleCart = [...this.saleCart, { product, quantity: 1 }];
+    }
+
+    this.messageService.add({
+      severity: 'success',
+      summary: 'Producto agregado',
+      detail: `${product.nombre} está en la venta.`
+    });
+  }
+
+  get saleCartTotal(): number {
+    return this.saleCart.reduce(
+      (total, item) => total + item.product.precio * item.quantity,
+      0
+    );
+  }
+
+  updateCartQuantity(productId: number | undefined, quantity: number | null): void {
+    if (productId === undefined || quantity === null || !Number.isInteger(quantity) || quantity < 1) {
+      return;
+    }
+    this.saleCart = this.saleCart.map((item) =>
+      item.product.id === productId
+        ? { ...item, quantity: Math.min(quantity, item.product.stock) }
+        : item
+    );
+  }
+
+  removeFromSale(productId: number | undefined): void {
+    this.saleCart = this.saleCart.filter((item) => item.product.id !== productId);
+  }
+
+  openSaleDialog(): void {
+    if (this.saleCart.length === 0) {
+      this.messageService.add({
+        severity: 'warn',
+        summary: 'Venta vacía',
+        detail: 'Agrega al menos un producto antes de continuar.'
+      });
+      return;
+    }
     this.saleDialogVisible = true;
   }
 
@@ -192,54 +245,41 @@ export class ProductListComponent implements OnInit {
     return productId !== undefined && this.sellingProductIds.has(productId);
   }
 
-  get estimatedSaleTotal(): number {
-    return (this.saleForm.controls.quantity.value ?? 0) * (this.selectedProduct?.precio ?? 0);
-  }
-
-  resetSaleDialog(): void {
-    this.selectedProduct = null;
-    this.saleForm.controls.quantity.setValidators([
-      Validators.required,
-      Validators.min(1)
-    ]);
-    this.saleForm.controls.quantity.setValue(1);
-    this.saleForm.controls.quantity.updateValueAndValidity();
+  get isSaleSubmitting(): boolean {
+    return this.sellingProductIds.size > 0;
   }
 
   submitSale(): void {
-    const product = this.selectedProduct;
-    const quantity = this.saleForm.controls.quantity.value;
-    if (
-      product?.id === undefined ||
-      quantity === null ||
-      !Number.isInteger(quantity) ||
-      quantity < 1 ||
-      quantity > product.stock ||
-      this.sellingProductIds.has(product.id)
-    ) {
-      this.saleForm.controls.quantity.markAsTouched();
+    if (this.saleCart.length === 0 || this.saleCart.some((item) =>
+      item.product.id === undefined ||
+      !Number.isInteger(item.quantity) ||
+      item.quantity < 1 ||
+      item.quantity > item.product.stock
+    )) {
       return;
     }
 
-    this.createSale(product, quantity);
-  }
-
-  private createSale(product: Product, quantity: number): void {
-    const productId = product.id;
-    if (productId === undefined || this.sellingProductIds.has(productId)) {
+    if (this.saleCart.some((item) => this.isSelling(item.product.id))) {
       return;
     }
 
-    this.sellingProductIds.add(productId);
-    this.saleService.create({ productId, quantity }).subscribe({
+    const productIds = this.saleCart.map((item) => item.product.id!);
+    productIds.forEach((productId) => this.sellingProductIds.add(productId));
+    this.saleService.create({
+      items: this.saleCart.map((item) => ({
+        productId: item.product.id!,
+        quantity: item.quantity
+      }))
+    }).subscribe({
       next: (sale) => {
-        this.updateProductStock(sale);
+        sale.items.forEach((item) => this.updateProductStock(item.productId, item.remainingStock));
         this.messageService.add({
           severity: 'success',
           summary: 'Venta realizada',
-          detail: `Se vendieron ${sale.quantity} unidad${sale.quantity !== 1 ? 'es' : ''} de "${sale.productName}". Total: ${this.formatPrice(sale.total)}. Stock restante: ${sale.remainingStock}.`
+          detail: `${sale.items.length} producto${sale.items.length !== 1 ? 's' : ''} vendidos por ${this.formatPrice(sale.total)}. Venta #${sale.saleId} registrada a nombre de ${sale.username}.`
         });
-        this.sellingProductIds.delete(productId);
+        productIds.forEach((productId) => this.sellingProductIds.delete(productId));
+        this.saleCart = [];
         this.saleDialogVisible = false;
       },
       error: (error: unknown) => {
@@ -248,18 +288,29 @@ export class ProductListComponent implements OnInit {
           summary: 'No se pudo realizar la venta',
           detail: this.getSaleErrorMessage(error)
         });
-        this.sellingProductIds.delete(productId);
-        this.saleDialogVisible = false;
-        this.loadProducts();
+        productIds.forEach((productId) => this.sellingProductIds.delete(productId));
+        if (this.isAdmin) {
+          this.loadProducts();
+        } else {
+          const currentId = this.lookupForm.controls.id.value;
+          if (currentId !== null) {
+            this.lookupForm.controls.id.setValue(currentId);
+          }
+        }
       }
     });
   }
 
-  private updateProductStock(sale: SaleResponse): void {
+  private updateProductStock(productId: number, remainingStock: number): void {
     this.products = this.products.map((product) =>
-      product.id === sale.productId
-        ? { ...product, stock: sale.remainingStock }
+      product.id === productId
+        ? { ...product, stock: remainingStock }
         : product
+    );
+    this.saleCart = this.saleCart.map((item) =>
+      item.product.id === productId
+        ? { ...item, product: { ...item.product, stock: remainingStock } }
+        : item
     );
   }
 

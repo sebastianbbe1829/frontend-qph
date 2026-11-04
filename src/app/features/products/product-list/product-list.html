@@ -3,74 +3,82 @@
   <p-confirmDialog />
 
   <p-dialog
-    header="Registrar venta"
+    header="Venta nueva"
     [(visible)]="saleDialogVisible"
     [modal]="true"
     [draggable]="false"
     [resizable]="false"
-    [closable]="!isSelling(selectedProduct?.id)"
-    [closeOnEscape]="!isSelling(selectedProduct?.id)"
+    [closable]="!isSaleSubmitting"
+    [closeOnEscape]="!isSaleSubmitting"
     [style]="{ width: 'min(460px, 94vw)' }"
     styleClass="sale-dialog"
-    (onHide)="resetSaleDialog()"
   >
-    @if (selectedProduct; as product) {
-      <form [formGroup]="saleForm" (ngSubmit)="submitSale()" class="sale-form">
-        <div class="sale-product-summary">
-          <div class="sale-product-icon"><i class="pi pi-box"></i></div>
-          <div>
-            <strong>{{ product.nombre }}</strong>
-            <span>{{ product.precio | currency:'USD' }} por unidad</span>
+    <div class="sale-form">
+      @for (item of saleCart; track item.product.id) {
+        <div class="sale-cart-item">
+          <div class="sale-product-summary">
+            <div class="sale-product-icon"><i class="pi pi-box"></i></div>
+            <div>
+              <strong>{{ item.product.nombre }}</strong>
+              <span>{{ item.product.precio | currency:'USD' }} c/u · {{ item.product.stock }} disponibles</span>
+            </div>
           </div>
-        </div>
-
-        <div class="sale-quantity-field">
-          <label for="sale-quantity">Cantidad a vender</label>
           <p-inputNumber
-            inputId="sale-quantity"
-            formControlName="quantity"
+            [ngModel]="item.quantity"
+            [ngModelOptions]="{ standalone: true }"
+            (ngModelChange)="updateCartQuantity(item.product.id, $event)"
             [min]="1"
-            [max]="product.stock"
+            [max]="item.product.stock"
             [maxFractionDigits]="0"
             [useGrouping]="false"
             [showButtons]="true"
             buttonLayout="horizontal"
             decrementButtonIcon="pi pi-minus"
             incrementButtonIcon="pi pi-plus"
-            styleClass="w-full"
-            inputStyleClass="w-full"
-            [disabled]="isSelling(product.id)"
+            inputStyleClass="sale-cart-quantity"
+            [disabled]="isSelling(item.product.id)"
           />
-          <small>Disponible: {{ product.stock }} unidades</small>
-          @if (saleForm.controls.quantity.touched && saleForm.controls.quantity.invalid) {
-            <small class="sale-field-error">Ingresa una cantidad entre 1 y {{ product.stock }}.</small>
-          }
+          <strong class="sale-line-total">{{ item.product.precio * item.quantity | currency:'USD' }}</strong>
+          <p-button
+            icon="pi pi-times"
+            [rounded]="true"
+            [text]="true"
+            severity="danger"
+            ariaLabel="Quitar producto de la venta"
+            [disabled]="isSaleSubmitting"
+            (onClick)="removeFromSale(item.product.id)"
+          />
         </div>
+      } @empty {
+        <div class="empty-cart">
+          <i class="pi pi-shopping-cart"></i>
+          <span>Agrega productos desde el listado para armar una venta.</span>
+        </div>
+      }
 
+      @if (saleCart.length > 0) {
         <div class="sale-total">
-          <span>Total estimado</span>
-          <strong>{{ estimatedSaleTotal | currency:'USD' }}</strong>
+          <span>Total de la venta ({{ saleCart.length }} productos)</span>
+          <strong>{{ saleCartTotal | currency:'USD' }}</strong>
         </div>
-
         <div class="sale-dialog-actions">
           <p-button
-            label="Cancelar"
+            label="Seguir agregando"
             severity="secondary"
             [outlined]="true"
             type="button"
-            [disabled]="isSelling(product.id)"
             (onClick)="saleDialogVisible = false"
           />
           <p-button
-            label="Registrar venta"
+            label="Registrar venta completa"
             icon="pi pi-shopping-cart"
-            type="submit"
-            [loading]="isSelling(product.id)"
-            [disabled]="saleForm.invalid || isSelling(product.id)"
+            (onClick)="submitSale()"
+            [loading]="isSaleSubmitting"
+            [disabled]="isSaleSubmitting"
           />
         </div>
-      </form>
-    }
+      }
+    </div>
   </p-dialog>
 
   <div class="page-header">
@@ -104,6 +112,21 @@
           (onClick)="goToCreate()"
         />
       }
+      @if (isAdmin) {
+        <p-button
+          label="Crear usuario"
+          icon="pi pi-user-plus"
+          [outlined]="true"
+          (onClick)="goToCreateUser()"
+        />
+      }
+      <p-button
+        label="Venta"
+        icon="pi pi-shopping-cart"
+        [badge]="saleCart.length ? saleCart.length.toString() : undefined"
+        [disabled]="saleCart.length === 0"
+        (onClick)="openSaleDialog()"
+      />
       <p-button
         icon="pi pi-sign-out"
         [text]="true"
@@ -174,8 +197,8 @@
           <th pSortableColumn="stock" style="width: 120px">
             Stock <p-sortIcon field="stock" />
           </th>
-          @if (!individualLookupMode) {
-            <th style="width: 190px; text-align: center">Acciones</th>
+          @if (!individualLookupMode || !isAdmin) {
+            <th style="width: 220px; text-align: center">Acciones</th>
           }
         </tr>
       </ng-template>
@@ -200,35 +223,37 @@
               [severity]="getStockSeverity(product.stock)"
             />
           </td>
-          @if (!individualLookupMode) {
+          @if (!individualLookupMode || !isAdmin) {
             <td>
               <div class="action-buttons">
                 <p-button
                   icon="pi pi-shopping-cart"
-                  label="Vender"
+                  label="Agregar"
                   [text]="true"
                   severity="success"
                   [disabled]="product.stock <= 0 || product.id === undefined || isSelling(product.id)"
                   [loading]="isSelling(product.id)"
-                  pTooltip="Elegir cantidad para vender"
-                  (onClick)="openSaleDialog(product)"
+                  pTooltip="Agregar producto a la venta"
+                  (onClick)="addProductToSale(product)"
                 />
-                <p-button
-                  icon="pi pi-pencil"
-                  [rounded]="true"
-                  [text]="true"
-                  severity="info"
-                  pTooltip="Editar"
-                  (onClick)="goToEdit(product.id)"
-                />
-                <p-button
-                  icon="pi pi-trash"
-                  [rounded]="true"
-                  [text]="true"
-                  severity="danger"
-                  pTooltip="Eliminar"
-                  (onClick)="confirmDelete(product)"
-                />
+                @if (isAdmin) {
+                  <p-button
+                    icon="pi pi-pencil"
+                    [rounded]="true"
+                    [text]="true"
+                    severity="info"
+                    pTooltip="Editar"
+                    (onClick)="goToEdit(product.id)"
+                  />
+                  <p-button
+                    icon="pi pi-trash"
+                    [rounded]="true"
+                    [text]="true"
+                    severity="danger"
+                    pTooltip="Eliminar"
+                    (onClick)="confirmDelete(product)"
+                  />
+                }
               </div>
             </td>
           }
@@ -237,7 +262,7 @@
 
       <ng-template pTemplate="emptymessage">
         <tr>
-          <td [attr.colspan]="individualLookupMode ? 4 : 5">
+          <td [attr.colspan]="individualLookupMode && isAdmin ? 4 : 5">
             <div class="empty-state">
               <i class="pi pi-inbox"></i>
               @if (individualLookupMode) {
