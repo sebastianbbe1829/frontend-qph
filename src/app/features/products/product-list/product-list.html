@@ -79,23 +79,31 @@
         <i class="pi pi-box"></i>
       </div>
       <div class="header-text">
-        <h1>Productos</h1>
-        <p>{{ products.length }} producto{{ products.length !== 1 ? 's' : '' }} registrado{{ products.length !== 1 ? 's' : '' }}</p>
+        <h1>{{ individualLookupMode ? 'Consulta de productos' : 'Productos' }}</h1>
+        <p>
+          @if (individualLookupMode) {
+            Consulta productos por su ID
+          } @else {
+            {{ products.length }} producto{{ products.length !== 1 ? 's' : '' }} registrado{{ products.length !== 1 ? 's' : '' }}
+          }
+        </p>
       </div>
     </div>
     <div class="header-actions">
-      <p-button
-        label="Categorías"
-        icon="pi pi-tags"
-        [outlined]="true"
-        (onClick)="goToCategories()"
-      />
-      <p-button
-        label="Nuevo Producto"
-        icon="pi pi-plus"
-        styleClass="new-btn"
-        (onClick)="goToCreate()"
-      />
+      @if (!individualLookupMode) {
+        <p-button
+          label="Categorías"
+          icon="pi pi-tags"
+          [outlined]="true"
+          (onClick)="goToCategories()"
+        />
+        <p-button
+          label="Nuevo Producto"
+          icon="pi pi-plus"
+          styleClass="new-btn"
+          (onClick)="goToCreate()"
+        />
+      }
       <p-button
         icon="pi pi-sign-out"
         [text]="true"
@@ -109,23 +117,42 @@
 
   <div class="table-card">
     <div class="table-toolbar">
-      <div class="search-box">
-        <i class="pi pi-search"></i>
-        <input
-          type="text"
-          placeholder="Buscar producto por nombre..."
-          aria-label="Buscar productos por nombre"
-          (input)="dt.filterGlobal($any($event.target).value, 'contains')"
-        />
-      </div>
-      <span class="results-count">{{ products.length }} registros</span>
+      @if (individualLookupMode) {
+        <div class="search-box product-id-search" [formGroup]="lookupForm">
+          <i class="pi pi-search"></i>
+          <input
+            pInputText
+            type="number"
+            formControlName="id"
+            min="1"
+            step="1"
+            placeholder="Buscar producto por ID..."
+            aria-label="Buscar producto por ID"
+          />
+          @if (lookupLoading) {
+            <i class="pi pi-spin pi-spinner lookup-spinner" aria-label="Buscando producto"></i>
+          }
+        </div>
+        <span class="results-count">{{ lookupMessage }}</span>
+      } @else {
+        <div class="search-box">
+          <i class="pi pi-search"></i>
+          <input
+            type="text"
+            placeholder="Buscar producto por nombre..."
+            aria-label="Buscar productos por nombre"
+            (input)="dt.filterGlobal($any($event.target).value, 'contains')"
+          />
+        </div>
+        <span class="results-count">{{ products.length }} registros</span>
+      }
     </div>
 
     <p-table
       #dt
       [value]="products"
-      [loading]="loading"
-      [paginator]="true"
+      [loading]="loading || lookupLoading"
+      [paginator]="!individualLookupMode"
       [rows]="10"
       [rowsPerPageOptions]="[5, 10, 20]"
       styleClass="p-datatable-sm"
@@ -147,7 +174,9 @@
           <th pSortableColumn="stock" style="width: 120px">
             Stock <p-sortIcon field="stock" />
           </th>
-          <th style="width: 190px; text-align: center">Acciones</th>
+          @if (!individualLookupMode) {
+            <th style="width: 190px; text-align: center">Acciones</th>
+          }
         </tr>
       </ng-template>
 
@@ -171,51 +200,57 @@
               [severity]="getStockSeverity(product.stock)"
             />
           </td>
-          <td>
-            <div class="action-buttons">
-              <p-button
-                icon="pi pi-shopping-cart"
-                label="Vender"
-                [text]="true"
-                severity="success"
-                [disabled]="product.stock <= 0 || product.id === undefined || isSelling(product.id)"
-                [loading]="isSelling(product.id)"
-                pTooltip="Elegir cantidad para vender"
-                (onClick)="openSaleDialog(product)"
-              />
-              <p-button
-                icon="pi pi-pencil"
-                [rounded]="true"
-                [text]="true"
-                severity="info"
-                pTooltip="Editar"
-                (onClick)="goToEdit(product.id)"
-              />
-              <p-button
-                icon="pi pi-trash"
-                [rounded]="true"
-                [text]="true"
-                severity="danger"
-                pTooltip="Eliminar"
-                (onClick)="confirmDelete(product)"
-              />
-            </div>
-          </td>
+          @if (!individualLookupMode) {
+            <td>
+              <div class="action-buttons">
+                <p-button
+                  icon="pi pi-shopping-cart"
+                  label="Vender"
+                  [text]="true"
+                  severity="success"
+                  [disabled]="product.stock <= 0 || product.id === undefined || isSelling(product.id)"
+                  [loading]="isSelling(product.id)"
+                  pTooltip="Elegir cantidad para vender"
+                  (onClick)="openSaleDialog(product)"
+                />
+                <p-button
+                  icon="pi pi-pencil"
+                  [rounded]="true"
+                  [text]="true"
+                  severity="info"
+                  pTooltip="Editar"
+                  (onClick)="goToEdit(product.id)"
+                />
+                <p-button
+                  icon="pi pi-trash"
+                  [rounded]="true"
+                  [text]="true"
+                  severity="danger"
+                  pTooltip="Eliminar"
+                  (onClick)="confirmDelete(product)"
+                />
+              </div>
+            </td>
+          }
         </tr>
       </ng-template>
 
       <ng-template pTemplate="emptymessage">
         <tr>
-          <td colspan="5">
+          <td [attr.colspan]="individualLookupMode ? 4 : 5">
             <div class="empty-state">
               <i class="pi pi-inbox"></i>
-              <span>No hay productos que coincidan con la búsqueda</span>
-              <p-button
-                label="Crear primer producto"
-                icon="pi pi-plus"
-                [text]="true"
-                (onClick)="goToCreate()"
-              />
+              @if (individualLookupMode) {
+                <span>{{ lookupMessage }}</span>
+              } @else {
+                <span>No hay productos que coincidan con la búsqueda</span>
+                <p-button
+                  label="Crear primer producto"
+                  icon="pi pi-plus"
+                  [text]="true"
+                  (onClick)="goToCreate()"
+                />
+              }
             </div>
           </td>
         </tr>

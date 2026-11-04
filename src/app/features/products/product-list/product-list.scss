@@ -189,6 +189,12 @@ $white:      #ffffff;
   }
 }
 
+.product-id-search {
+  input { min-width: 7rem; }
+
+  .lookup-spinner { flex: 0 0 auto; color: $gold; }
+}
+
 .results-count { color: $muted-lite; font-size: 0.75rem; white-space: nowrap; }
 
 // ─── PrimeNG DataTable ────────────────────────────────────────────────────────

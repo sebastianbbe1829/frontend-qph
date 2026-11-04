@@ -1,4 +1,5 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, DestroyRef, inject, OnInit } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -8,6 +9,7 @@ import { AuthService } from '../../../core/services/auth';
 import { Product } from '../../../shared/models/product.model';
 import { SaleResponse } from '../../../shared/models/sale.model';
 import { HttpErrorResponse } from '@angular/common/http';
+import { catchError, finalize, of, switchMap, timer } from 'rxjs';
 
 // PrimeNG
 import { TableModule } from 'primeng/table';
@@ -50,6 +52,7 @@ export class ProductListComponent implements OnInit {
   private productService = inject(ProductService);
   private saleService = inject(SaleService);
   private fb = inject(FormBuilder);
+  private destroyRef = inject(DestroyRef);
   private authService = inject(AuthService);
   private router = inject(Router);
   private confirmationService = inject(ConfirmationService);
@@ -57,6 +60,12 @@ export class ProductListComponent implements OnInit {
 
   products: Product[] = [];
   loading = false;
+  individualLookupMode = false;
+  lookupLoading = false;
+  lookupMessage = 'Ingresa el ID del producto para consultar sus datos';
+  lookupForm = this.fb.group({
+    id: [null as number | null, [Validators.required, Validators.min(1)]]
+  });
   sellingProductIds = new Set<number>();
   saleDialogVisible = false;
   selectedProduct: Product | null = null;
@@ -65,6 +74,49 @@ export class ProductListComponent implements OnInit {
   });
 
   ngOnInit(): void {
+    this.lookupForm.controls.id.valueChanges.pipe(
+      switchMap((id) => {
+        this.products = [];
+        this.lookupMessage = id === null
+          ? 'Ingresa el ID del producto para consultar sus datos'
+          : 'Buscando producto...';
+        this.lookupLoading = false;
+
+        if (id === null || !Number.isInteger(id) || id < 1) {
+          return of(null);
+        }
+
+        return timer(350).pipe(
+          switchMap(() => {
+            this.lookupLoading = true;
+            return this.productService.getById(id).pipe(
+              catchError((error: unknown) => {
+                if (error instanceof HttpErrorResponse && error.status === 404) {
+                  this.lookupMessage = `No existe un producto con el ID ${id}.`;
+                } else {
+                  this.lookupMessage = 'No se pudo consultar el producto.';
+                  this.messageService.add({
+                    severity: 'error',
+                    summary: 'Error de consulta',
+                    detail: 'No se pudo consultar el producto. Verifica tu acceso e inténtalo de nuevo.'
+                  });
+                }
+                return of(null);
+              }),
+              finalize(() => {
+                this.lookupLoading = false;
+              })
+            );
+          })
+        );
+      }),
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe((product) => {
+      this.products = product ? [product] : [];
+      if (product) {
+        this.lookupMessage = `Producto encontrado: ${product.nombre}`;
+      }
+    });
     this.loadProducts();
   }
 
@@ -75,14 +127,24 @@ export class ProductListComponent implements OnInit {
         this.products = data;
         this.loading = false;
       },
-      error: () => {
-        this.messageService.add({
-          severity: 'error',
-          summary: 'Error',
-          detail: 'No se pudieron cargar los productos'
-        });
+      error: (error: unknown) => {
         this.loading = false;
+        this.handleProductsLoadError(error);
       }
+    });
+  }
+
+  private handleProductsLoadError(error: unknown): void {
+    if (error instanceof HttpErrorResponse && error.status === 403) {
+      this.individualLookupMode = true;
+      this.products = [];
+      return;
+    }
+
+    this.messageService.add({
+      severity: 'error',
+      summary: 'Error',
+      detail: 'No se pudieron cargar los productos'
     });
   }
 
