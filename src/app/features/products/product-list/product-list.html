@@ -76,7 +76,7 @@
           <th pSortableColumn="stock" style="width: 120px">
             Stock <p-sortIcon field="stock" />
           </th>
-          <th style="width: 120px; text-align: center">Acciones</th>
+          <th style="width: 190px; text-align: center">Acciones</th>
         </tr>
       </ng-template>
 
@@ -102,6 +102,16 @@
           </td>
           <td>
             <div class="action-buttons">
+              <p-button
+                icon="pi pi-shopping-cart"
+                label="Vender"
+                [text]="true"
+                severity="success"
+                [disabled]="product.stock <= 0 || product.id === undefined || isSelling(product.id)"
+                [loading]="isSelling(product.id)"
+                pTooltip="Vender 1 unidad"
+                (onClick)="confirmSale(product)"
+              />
               <p-button
                 icon="pi pi-pencil"
                 [rounded]="true"

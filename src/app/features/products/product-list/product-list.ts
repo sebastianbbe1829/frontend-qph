@@ -2,8 +2,11 @@ import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { ProductService } from '../../../core/services/product';
+import { SaleService } from '../../../core/services/sale';
 import { AuthService } from '../../../core/services/auth';
 import { Product } from '../../../shared/models/product.model';
+import { SaleResponse } from '../../../shared/models/sale.model';
+import { HttpErrorResponse } from '@angular/common/http';
 
 // PrimeNG
 import { TableModule } from 'primeng/table';
@@ -39,6 +42,7 @@ import { ConfirmationService, MessageService } from 'primeng/api';
 export class ProductListComponent implements OnInit {
 
   private productService = inject(ProductService);
+  private saleService = inject(SaleService);
   private authService = inject(AuthService);
   private router = inject(Router);
   private confirmationService = inject(ConfirmationService);
@@ -46,6 +50,7 @@ export class ProductListComponent implements OnInit {
 
   products: Product[] = [];
   loading = false;
+  sellingProductIds = new Set<number>();
 
   ngOnInit(): void {
     this.loadProducts();
@@ -91,6 +96,100 @@ export class ProductListComponent implements OnInit {
       acceptButtonStyleClass: 'p-button-danger',
       accept: () => this.deleteProduct(product.id!)
     });
+  }
+
+  confirmSale(product: Product): void {
+    if (product.id === undefined || product.stock <= 0) {
+      return;
+    }
+
+    this.confirmationService.confirm({
+      message: `¿Deseas registrar la venta de 1 unidad de "${product.nombre}"?`,
+      header: 'Confirmar venta',
+      icon: 'pi pi-shopping-cart',
+      acceptLabel: 'Sí, vender',
+      rejectLabel: 'Cancelar',
+      acceptButtonStyleClass: 'p-button-success',
+      accept: () => this.createSale(product)
+    });
+  }
+
+  isSelling(productId: number | undefined): boolean {
+    return productId !== undefined && this.sellingProductIds.has(productId);
+  }
+
+  private createSale(product: Product): void {
+    const productId = product.id;
+    if (productId === undefined || this.sellingProductIds.has(productId)) {
+      return;
+    }
+
+    this.sellingProductIds.add(productId);
+    this.saleService.create({ productId, quantity: 1 }).subscribe({
+      next: (sale) => {
+        this.updateProductStock(sale);
+        this.messageService.add({
+          severity: 'success',
+          summary: 'Venta realizada',
+          detail: `Se vendió 1 unidad de "${sale.productName}". Total: ${this.formatPrice(sale.total)}. Stock restante: ${sale.remainingStock}.`
+        });
+        this.sellingProductIds.delete(productId);
+      },
+      error: (error: unknown) => {
+        this.messageService.add({
+          severity: 'error',
+          summary: 'No se pudo realizar la venta',
+          detail: this.getSaleErrorMessage(error)
+        });
+        this.sellingProductIds.delete(productId);
+        this.loadProducts();
+      }
+    });
+  }
+
+  private updateProductStock(sale: SaleResponse): void {
+    this.products = this.products.map((product) =>
+      product.id === sale.productId
+        ? { ...product, stock: sale.remainingStock }
+        : product
+    );
+  }
+
+  private formatPrice(amount: number): string {
+    return amount.toLocaleString('en-US', {
+      style: 'currency',
+      currency: 'USD'
+    });
+  }
+
+  private getSaleErrorMessage(error: unknown): string {
+    if (!(error instanceof HttpErrorResponse)) {
+      return 'Ocurrió un error inesperado al registrar la venta.';
+    }
+
+    if (error.status === 0) {
+      return 'No fue posible conectar con el servidor.';
+    }
+
+    if (error.status === 404) {
+      return 'El producto ya no existe. Se actualizará el listado.';
+    }
+
+    if (error.status === 409) {
+      return 'No hay suficiente stock para completar la venta.';
+    }
+
+    const body: unknown = error.error;
+    if (
+      body !== null &&
+      typeof body === 'object' &&
+      'error' in body &&
+      typeof body.error === 'string'
+    ) {
+      return body.error;
+    }
+
+    return 'No se pudo completar la venta.';
   }
 
   private deleteProduct(id: number): void {
