@@ -510,6 +510,87 @@ $white:      #ffffff;
   }
 }
 
+// ─── Sale dialog ──────────────────────────────────────────────────────────────
+::ng-deep .sale-dialog {
+  .p-dialog-header,
+  .p-dialog-content {
+    background: $ink-soft !important;
+    color: $cream !important;
+  }
+
+  .p-dialog-header {
+    border-bottom: 1px solid $gold-dim !important;
+    font-family: 'Playfair Display', serif !important;
+  }
+
+  .p-dialog-title { color: $cream !important; }
+  .p-dialog-header-close { color: $muted-lite !important; }
+  .p-dialog-content { padding: 1.5rem !important; }
+}
+
+.sale-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  font-family: 'DM Sans', sans-serif;
+}
+
+.sale-product-summary {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+
+  .sale-product-icon {
+    width: 42px;
+    height: 42px;
+    display: grid;
+    place-items: center;
+    border: 1px solid $gold-dim;
+    color: $gold;
+  }
+
+  strong,
+  span { display: block; }
+
+  strong { color: $cream; font-weight: 500; }
+  span { margin-top: 0.2rem; color: $muted-lite; font-size: 0.8rem; }
+}
+
+.sale-quantity-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+
+  label { color: $cream; font-size: 0.85rem; }
+  small { color: $muted-lite; font-size: 0.75rem; }
+  .sale-field-error { color: $error; }
+
+  ::ng-deep .p-inputnumber-input {
+    background: $ink-mid !important;
+    border-color: $gold-dim !important;
+    color: $cream !important;
+  }
+
+  ::ng-deep .p-inputnumber-button { background: $ink-mid !important; }
+}
+
+.sale-total {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 1rem;
+  border-top: 1px solid $gold-dim;
+
+  span { color: $muted-lite; font-size: 0.85rem; }
+  strong { color: $gold; font-size: 1.1rem; }
+}
+
+.sale-dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.6rem;
+}
+
 // ─── Responsive ───────────────────────────────────────────────────────────────
 @media (max-width: 768px) {
   .list-page { padding: 1.5rem 1rem; }

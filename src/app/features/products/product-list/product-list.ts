@@ -1,5 +1,6 @@
 import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { ProductService } from '../../../core/services/product';
 import { SaleService } from '../../../core/services/sale';
@@ -14,10 +15,12 @@ import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
 import { TagModule } from 'primeng/tag';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
+import { DialogModule } from 'primeng/dialog';
 import { ToastModule } from 'primeng/toast';
 import { ToolbarModule } from 'primeng/toolbar';
 import { TooltipModule } from 'primeng/tooltip';
 import { InputTextModule } from 'primeng/inputtext';
+import { InputNumberModule } from 'primeng/inputnumber';
 import { ConfirmationService, MessageService } from 'primeng/api';
 
 @Component({
@@ -25,15 +28,18 @@ import { ConfirmationService, MessageService } from 'primeng/api';
   standalone: true,
   imports: [
     CommonModule,
+    ReactiveFormsModule,
     TableModule,
     ButtonModule,
     CardModule,
     TagModule,
     ConfirmDialogModule,
+    DialogModule,
     ToastModule,
     ToolbarModule,
     TooltipModule,
-    InputTextModule
+    InputTextModule,
+    InputNumberModule
   ],
   providers: [ConfirmationService, MessageService],
   templateUrl: './product-list.html',
@@ -43,6 +49,7 @@ export class ProductListComponent implements OnInit {
 
   private productService = inject(ProductService);
   private saleService = inject(SaleService);
+  private fb = inject(FormBuilder);
   private authService = inject(AuthService);
   private router = inject(Router);
   private confirmationService = inject(ConfirmationService);
@@ -51,6 +58,11 @@ export class ProductListComponent implements OnInit {
   products: Product[] = [];
   loading = false;
   sellingProductIds = new Set<number>();
+  saleDialogVisible = false;
+  selectedProduct: Product | null = null;
+  saleForm = this.fb.group({
+    quantity: [1 as number | null, [Validators.required, Validators.min(1)]]
+  });
 
   ngOnInit(): void {
     this.loadProducts();
@@ -98,42 +110,75 @@ export class ProductListComponent implements OnInit {
     });
   }
 
-  confirmSale(product: Product): void {
+  openSaleDialog(product: Product): void {
     if (product.id === undefined || product.stock <= 0) {
       return;
     }
 
-    this.confirmationService.confirm({
-      message: `¿Deseas registrar la venta de 1 unidad de "${product.nombre}"?`,
-      header: 'Confirmar venta',
-      icon: 'pi pi-shopping-cart',
-      acceptLabel: 'Sí, vender',
-      rejectLabel: 'Cancelar',
-      acceptButtonStyleClass: 'p-button-success',
-      accept: () => this.createSale(product)
-    });
+    this.selectedProduct = product;
+    this.saleForm.controls.quantity.setValidators([
+      Validators.required,
+      Validators.min(1),
+      Validators.max(product.stock)
+    ]);
+    this.saleForm.controls.quantity.setValue(1);
+    this.saleForm.controls.quantity.updateValueAndValidity();
+    this.saleDialogVisible = true;
   }
 
   isSelling(productId: number | undefined): boolean {
     return productId !== undefined && this.sellingProductIds.has(productId);
   }
 
-  private createSale(product: Product): void {
+  get estimatedSaleTotal(): number {
+    return (this.saleForm.controls.quantity.value ?? 0) * (this.selectedProduct?.precio ?? 0);
+  }
+
+  resetSaleDialog(): void {
+    this.selectedProduct = null;
+    this.saleForm.controls.quantity.setValidators([
+      Validators.required,
+      Validators.min(1)
+    ]);
+    this.saleForm.controls.quantity.setValue(1);
+    this.saleForm.controls.quantity.updateValueAndValidity();
+  }
+
+  submitSale(): void {
+    const product = this.selectedProduct;
+    const quantity = this.saleForm.controls.quantity.value;
+    if (
+      product?.id === undefined ||
+      quantity === null ||
+      !Number.isInteger(quantity) ||
+      quantity < 1 ||
+      quantity > product.stock ||
+      this.sellingProductIds.has(product.id)
+    ) {
+      this.saleForm.controls.quantity.markAsTouched();
+      return;
+    }
+
+    this.createSale(product, quantity);
+  }
+
+  private createSale(product: Product, quantity: number): void {
     const productId = product.id;
     if (productId === undefined || this.sellingProductIds.has(productId)) {
       return;
     }
 
     this.sellingProductIds.add(productId);
-    this.saleService.create({ productId, quantity: 1 }).subscribe({
+    this.saleService.create({ productId, quantity }).subscribe({
       next: (sale) => {
         this.updateProductStock(sale);
         this.messageService.add({
           severity: 'success',
           summary: 'Venta realizada',
-          detail: `Se vendió 1 unidad de "${sale.productName}". Total: ${this.formatPrice(sale.total)}. Stock restante: ${sale.remainingStock}.`
+          detail: `Se vendieron ${sale.quantity} unidad${sale.quantity !== 1 ? 'es' : ''} de "${sale.productName}". Total: ${this.formatPrice(sale.total)}. Stock restante: ${sale.remainingStock}.`
         });
         this.sellingProductIds.delete(productId);
+        this.saleDialogVisible = false;
       },
       error: (error: unknown) => {
         this.messageService.add({
@@ -142,6 +187,7 @@ export class ProductListComponent implements OnInit {
           detail: this.getSaleErrorMessage(error)
         });
         this.sellingProductIds.delete(productId);
+        this.saleDialogVisible = false;
         this.loadProducts();
       }
     });
