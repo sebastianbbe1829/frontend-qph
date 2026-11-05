@@ -156,10 +156,6 @@ export class ProductListComponent implements OnInit {
     this.router.navigate(['/products/new']);
   }
 
-  goToCategories(): void {
-    this.router.navigate(['/categories']);
-  }
-
   goToCreateUser(): void {
     this.router.navigate(['/users/new']);
   }

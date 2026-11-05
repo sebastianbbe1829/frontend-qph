@@ -2,6 +2,14 @@
 
 This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 21.2.6.
 
+## Alcance y arquitectura
+
+Este frontend cubre la gestión de productos, el registro de usuarios y la venta de productos.
+
+La aplicación se organiza por funcionalidades (`features`) y responsabilidades compartidas (`core` para servicios, guards e interceptores; `shared` para modelos). Para el análisis del diseño actual, las decisiones sobre ventas y stock y la evolución recomendada del backend y frontend, consulta [docs/architecture.md](./docs/architecture.md).
+
+Este repositorio contiene únicamente el frontend Angular. Los cambios al esquema, las entidades, las transacciones de stock y los endpoints del backend deben implementarse en el repositorio del servidor.
+
 ## Development server
 
 To start a local development server, run:
