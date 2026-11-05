@@ -92,7 +92,7 @@
           @if (individualLookupMode) {
             Consulta productos por su ID
           } @else {
-            {{ products.length }} producto{{ products.length !== 1 ? 's' : '' }} registrado{{ products.length !== 1 ? 's' : '' }}
+            {{ totalRecords }} producto{{ totalRecords !== 1 ? 's' : '' }} registrado{{ totalRecords !== 1 ? 's' : '' }}
           }
         </p>
       </div>
@@ -164,10 +164,11 @@
             type="text"
             placeholder="Buscar producto por nombre..."
             aria-label="Buscar productos por nombre"
-            (input)="dt.filterGlobal($any($event.target).value, 'contains')"
+            [value]="searchTerm"
+            (input)="onSearchChange($any($event.target).value)"
           />
         </div>
-        <span class="results-count">{{ products.length }} registros</span>
+        <span class="results-count">{{ totalRecords }} registros</span>
       }
     </div>
 
@@ -175,13 +176,19 @@
       #dt
       [value]="products"
       [loading]="loading || lookupLoading"
-      [paginator]="!individualLookupMode"
-      [rows]="10"
-      [rowsPerPageOptions]="[5, 10, 20]"
+      [lazy]="isAdmin && !individualLookupMode"
+      [lazyLoadOnInit]="false"
+      [paginator]="isAdmin && !individualLookupMode"
+      [first]="first"
+      [rows]="pageSize"
+      [totalRecords]="totalRecords"
+      [rowsPerPageOptions]="[10, 20, 50]"
+      [sortField]="sortField"
+      [sortOrder]="sortOrder"
+      (onLazyLoad)="onTableLazyLoad($event)"
       styleClass="p-datatable-sm"
       [tableStyle]="{ 'min-width': '48rem' }"
       [rowHover]="true"
-      [globalFilterFields]="['nombre']"
     >
       <ng-template pTemplate="header">
         <tr>

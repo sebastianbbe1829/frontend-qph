@@ -7,7 +7,7 @@
       <div class="header-text">
         <span class="eyebrow">Administración</span>
         <h1>Consulta de usuarios</h1>
-        <p>{{ users.length }} usuario{{ users.length !== 1 ? 's' : '' }} registrado{{ users.length !== 1 ? 's' : '' }}</p>
+        <p>{{ totalRecords }} usuario{{ totalRecords !== 1 ? 's' : '' }} registrado{{ totalRecords !== 1 ? 's' : '' }}</p>
       </div>
     </div>
     <div class="header-actions">
@@ -34,11 +34,12 @@
           type="text"
           placeholder="Buscar por usuario o rol..."
           aria-label="Buscar usuarios por nombre o rol"
-          (input)="table.filterGlobal($any($event.target).value, 'contains')"
+          [value]="searchTerm"
+          (input)="onSearchChange($any($event.target).value)"
         />
       </div>
       <div class="toolbar-actions">
-        <span class="results-count">{{ users.length }} registros</span>
+        <span class="results-count">{{ totalRecords }} registros</span>
         <p-button
           icon="pi pi-refresh"
           [text]="true"
@@ -53,11 +54,17 @@
       #table
       [value]="users"
       [loading]="loading"
-      [paginator]="users.length > 10"
-      [rows]="10"
-      [rowsPerPageOptions]="[5, 10, 20]"
+      [lazy]="true"
+      [lazyLoadOnInit]="false"
+      [paginator]="true"
+      [first]="first"
+      [rows]="pageSize"
+      [totalRecords]="totalRecords"
+      [rowsPerPageOptions]="[10, 20, 50]"
+      [sortField]="sortField"
+      [sortOrder]="sortOrder"
+      (onLazyLoad)="onTableLazyLoad($event)"
       [rowHover]="true"
-      [globalFilterFields]="['id', 'username', 'role']"
       styleClass="p-datatable-sm"
       [tableStyle]="{ 'min-width': '36rem' }"
     >

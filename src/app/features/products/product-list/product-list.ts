@@ -9,7 +9,7 @@ import { SaleService } from '../../../core/services/sale';
 import { AuthService } from '../../../core/services/auth';
 import { Product } from '../../../shared/models/product.model';
 import { HttpErrorResponse } from '@angular/common/http';
-import { catchError, finalize, of, switchMap, timer } from 'rxjs';
+import { catchError, debounceTime, finalize, of, Subject, switchMap, timer } from 'rxjs';
 
 // PrimeNG
 import { TableModule } from 'primeng/table';
@@ -24,6 +24,7 @@ import { TooltipModule } from 'primeng/tooltip';
 import { InputTextModule } from 'primeng/inputtext';
 import { InputNumberModule } from 'primeng/inputnumber';
 import { ConfirmationService, MessageService } from 'primeng/api';
+import { TableLazyLoadEvent } from 'primeng/types/table';
 
 interface SaleCartItem {
   product: Product;
@@ -63,9 +64,18 @@ export class ProductListComponent implements OnInit {
   private router = inject(Router);
   private confirmationService = inject(ConfirmationService);
   private messageService = inject(MessageService);
+  private readonly searchChanges = new Subject<string>();
 
   products: Product[] = [];
   loading = false;
+  page = 0;
+  pageSize = 20;
+  first = 0;
+  totalRecords = 0;
+  sortField = 'id';
+  sortOrder = 1;
+  searchTerm = '';
+  private loadRequestId = 0;
   isAdmin = this.authService.hasRole('ROLE_ADMIN');
   individualLookupMode = false;
   lookupLoading = false;
@@ -78,6 +88,16 @@ export class ProductListComponent implements OnInit {
   saleCart: SaleCartItem[] = [];
 
   ngOnInit(): void {
+    this.searchChanges.pipe(
+      debounceTime(300),
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe((search) => {
+      this.searchTerm = search.trim();
+      this.page = 0;
+      this.first = 0;
+      this.loadProducts();
+    });
+
     this.lookupForm.controls.id.valueChanges.pipe(
       switchMap((id) => {
         this.products = [];
@@ -125,23 +145,62 @@ export class ProductListComponent implements OnInit {
   }
 
   loadProducts(): void {
+    const requestId = ++this.loadRequestId;
     this.loading = true;
-    this.productService.getAll().subscribe({
+    this.productService.getAll(
+      this.page,
+      this.pageSize,
+      this.sortField,
+      this.sortOrder === -1 ? 'DESC' : 'ASC',
+      this.searchTerm
+    ).subscribe({
       next: (data) => {
-        this.products = data;
+        if (requestId !== this.loadRequestId) {
+          return;
+        }
+        if (data.content.length === 0 && data.totalElements > 0 && this.page > 0) {
+          this.page = Math.ceil(data.totalElements / this.pageSize) - 1;
+          this.first = this.page * this.pageSize;
+          this.loadProducts();
+          return;
+        }
+        this.products = data.content;
+        this.totalRecords = data.totalElements;
         this.loading = false;
       },
       error: (error: unknown) => {
+        if (requestId !== this.loadRequestId) {
+          return;
+        }
         this.loading = false;
         this.handleProductsLoadError(error);
       }
     });
   }
 
+  onTableLazyLoad(event: TableLazyLoadEvent): void {
+    this.pageSize = event.rows ?? this.pageSize;
+    this.first = event.first ?? this.first;
+    this.page = Math.floor(this.first / this.pageSize);
+    const sortField = Array.isArray(event.sortField) ? event.sortField[0] : event.sortField;
+    if (sortField) {
+      this.sortField = sortField;
+    }
+    if (event.sortOrder) {
+      this.sortOrder = event.sortOrder;
+    }
+    this.loadProducts();
+  }
+
+  onSearchChange(search: string): void {
+    this.searchChanges.next(search);
+  }
+
   private handleProductsLoadError(error: unknown): void {
     if (error instanceof HttpErrorResponse && error.status === 403) {
       this.individualLookupMode = true;
       this.products = [];
+      this.totalRecords = 0;
       return;
     }
 
