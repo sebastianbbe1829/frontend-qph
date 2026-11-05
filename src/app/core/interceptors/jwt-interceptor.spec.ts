@@ -32,7 +32,7 @@ describe('jwtInterceptor', () => {
   it('does not send a saved token or log out after invalid login credentials', () => {
     const request = new HttpRequest(
       'POST',
-      'http://localhost:8080/api/auth/login',
+      '/api/auth/login',
       { username: 'admin', password: 'wrong-password' }
     );
     const forwardedRequests: HttpRequest<unknown>[] = [];
@@ -51,7 +51,7 @@ describe('jwtInterceptor', () => {
   });
 
   it('attaches the saved token to protected API requests', () => {
-    const request = new HttpRequest('GET', 'http://localhost:8080/api/products');
+    const request = new HttpRequest('GET', '/api/products');
     const forwardedRequests: HttpRequest<unknown>[] = [];
     const next = (forwarded: HttpRequest<unknown>) => {
       forwardedRequests.push(forwarded);
@@ -68,7 +68,7 @@ describe('jwtInterceptor', () => {
   });
 
   it('clears the session after an unauthorized protected request', () => {
-    const request = new HttpRequest('GET', 'http://localhost:8080/api/products');
+    const request = new HttpRequest('GET', '/api/products');
     const next = () =>
       throwError(() => new HttpErrorResponse({ status: 401 }));
 
