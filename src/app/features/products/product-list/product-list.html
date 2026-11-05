@@ -108,6 +108,12 @@
       }
       @if (isAdmin) {
         <p-button
+          label="Consultar usuarios"
+          icon="pi pi-users"
+          [outlined]="true"
+          (onClick)="goToUsers()"
+        />
+        <p-button
           label="Crear usuario"
           icon="pi pi-user-plus"
           [outlined]="true"

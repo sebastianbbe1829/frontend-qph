@@ -10,6 +10,10 @@ export class UserService {
 
   constructor(private http: HttpClient) {}
 
+  getAll(): Observable<UserResponse[]> {
+    return this.http.get<UserResponse[]>(this.apiUrl);
+  }
+
   create(user: UserCreateRequest): Observable<UserResponse> {
     return this.http.post<UserResponse>(this.apiUrl, user);
   }

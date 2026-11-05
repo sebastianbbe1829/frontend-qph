@@ -4,7 +4,7 @@ This project was generated using [Angular CLI](https://github.com/angular/angula
 
 ## Alcance y arquitectura
 
-Este frontend cubre la gestión de productos, el registro de usuarios y la venta de productos.
+Este frontend cubre la gestión de productos, la consulta y el registro de usuarios y la venta de productos. La pantalla de usuarios está restringida al rol administrador en la navegación; el endpoint también exige ese rol en el backend.
 
 La aplicación se organiza por funcionalidades (`features`) y responsabilidades compartidas (`core` para servicios, guards e interceptores; `shared` para modelos). Para el análisis del diseño actual, las decisiones sobre ventas y stock y la evolución recomendada del backend y frontend, consulta [docs/architecture.md](./docs/architecture.md).
 

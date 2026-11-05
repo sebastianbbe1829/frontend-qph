@@ -1,0 +1,116 @@
+<div class="user-list-page">
+  <p-toast />
+
+  <header class="page-header">
+    <div class="header-left">
+      <div class="header-icon"><i class="pi pi-users"></i></div>
+      <div class="header-text">
+        <span class="eyebrow">Administración</span>
+        <h1>Consulta de usuarios</h1>
+        <p>{{ users.length }} usuario{{ users.length !== 1 ? 's' : '' }} registrado{{ users.length !== 1 ? 's' : '' }}</p>
+      </div>
+    </div>
+    <div class="header-actions">
+      <p-button
+        label="Crear usuario"
+        icon="pi pi-user-plus"
+        (onClick)="goToCreate()"
+      />
+      <p-button
+        label="Volver a productos"
+        icon="pi pi-arrow-left"
+        [outlined]="true"
+        (onClick)="goToProducts()"
+      />
+    </div>
+  </header>
+
+  <section class="table-card" aria-label="Usuarios registrados">
+    <div class="table-toolbar">
+      <div class="search-box">
+        <i class="pi pi-search" aria-hidden="true"></i>
+        <input
+          pInputText
+          type="text"
+          placeholder="Buscar por usuario o rol..."
+          aria-label="Buscar usuarios por nombre o rol"
+          (input)="table.filterGlobal($any($event.target).value, 'contains')"
+        />
+      </div>
+      <div class="toolbar-actions">
+        <span class="results-count">{{ users.length }} registros</span>
+        <p-button
+          icon="pi pi-refresh"
+          [text]="true"
+          ariaLabel="Actualizar lista de usuarios"
+          [disabled]="loading"
+          (onClick)="loadUsers()"
+        />
+      </div>
+    </div>
+
+    <p-table
+      #table
+      [value]="users"
+      [loading]="loading"
+      [paginator]="users.length > 10"
+      [rows]="10"
+      [rowsPerPageOptions]="[5, 10, 20]"
+      [rowHover]="true"
+      [globalFilterFields]="['id', 'username', 'role']"
+      styleClass="p-datatable-sm"
+      [tableStyle]="{ 'min-width': '36rem' }"
+    >
+      <ng-template pTemplate="header">
+        <tr>
+          <th pSortableColumn="id" style="width: 100px">ID <p-sortIcon field="id" /></th>
+          <th pSortableColumn="username">Nombre de usuario <p-sortIcon field="username" /></th>
+          <th pSortableColumn="role" style="width: 220px">Rol <p-sortIcon field="role" /></th>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="body" let-user>
+        <tr>
+          <td><span class="id-badge">#{{ user.id }}</span></td>
+          <td>
+            <div class="username-cell">
+              <i class="pi pi-user" aria-hidden="true"></i>
+              <span>{{ user.username }}</span>
+            </div>
+          </td>
+          <td>
+            <p-tag
+              [value]="getRoleLabel(user.role)"
+              [severity]="user.role === 'ADMIN' ? 'warn' : 'info'"
+            />
+          </td>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="3">
+            <div class="empty-state">
+              <i class="pi pi-inbox" aria-hidden="true"></i>
+              <span>
+                @if (loadFailed) {
+                  No se pudo cargar la lista de usuarios.
+                } @else if (users.length) {
+                  No hay usuarios que coincidan con la búsqueda.
+                } @else {
+                  Aún no hay usuarios registrados.
+                }
+              </span>
+              @if (!users.length && !loadFailed) {
+                <p-button
+                  label="Crear primer usuario"
+                  icon="pi pi-user-plus"
+                  [text]="true"
+                  (onClick)="goToCreate()"
+                />
+              }
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </section>
+</div>
